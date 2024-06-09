@@ -1,25 +1,15 @@
-import requests
+from base_methods import BaseMethods
 
 
-class ApiService:
-    base_url = "https://qa-scooter.praktikum-services.ru/api/v1"
+class ApiCourier(BaseMethods):
+    def __init__(self):
+        super().__init__()
 
-    @staticmethod
-    def login_courier(login, password):
-        payload = {
-            "login": login,
-            "password": password
-        }
-        return requests.post(f"{ApiService.base_url}/courier/login", json=payload)
+    def create_courier(self, payload):
+        return self.post("/courier", payload)
 
-    @staticmethod
-    def create_order(order_data):
-        return requests.post(f"{ApiService.base_url}/orders", json=order_data)
+    def login_courier(self, payload):
+        return self.post("/courier/login", payload)
 
-    @staticmethod
-    def get_orders():
-        return requests.get(f"{ApiService.base_url}/orders")
-
-    @staticmethod
-    def delete_courier(courier_id):
-        return requests.delete(f"{ApiService.base_url}/courier/{courier_id}")
+    def delete_courier(self, courier_id):
+        return self.delete("/courier", object_id=courier_id)

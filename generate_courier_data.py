@@ -1,14 +1,40 @@
 import random
 import string
+import pytest
 
 
-def new_courier_data():
-    def generate_random_string(length):
-        letters = string.ascii_lowercase
-        return ''.join(random.choice(letters) for _ in range(length))
+def generate_random_string(length):
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for _ in range(length))
 
+
+@pytest.fixture(scope='function')
+def full_courier_data():
     login = generate_random_string(10)
     password = generate_random_string(10)
     first_name = generate_random_string(10)
+    return {"login": login, "password": password, "first_name": first_name}
 
-    return login, password, first_name
+
+@pytest.fixture(scope='function')
+def required_courier_data():
+    login = generate_random_string(10)
+    password = generate_random_string(10)
+    return {"login": login, "password": password}
+
+
+@pytest.fixture(scope='function')
+def courier_login():
+    login = generate_random_string(10)
+    return login
+
+
+@pytest.fixture(scope='function')
+def courier_password():
+    password = generate_random_string(10)
+    return password
+
+@pytest.fixture(scope='function')
+def courier_name():
+    first_name = generate_random_string(10)
+    return first_name

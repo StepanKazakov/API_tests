@@ -21,20 +21,3 @@ def required_courier_data():
     login = generate_random_string(10)
     password = generate_random_string(10)
     return {"login": login, "password": password}
-
-
-@pytest.fixture(scope='function')
-def courier_login():
-    login = generate_random_string(10)
-    return login
-
-
-@pytest.fixture(scope='function')
-def courier_password():
-    password = generate_random_string(10)
-    return password
-
-@pytest.fixture(scope='function')
-def courier_name():
-    first_name = generate_random_string(10)
-    return first_name

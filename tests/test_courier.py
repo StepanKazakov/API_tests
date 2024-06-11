@@ -1,7 +1,7 @@
 import allure
 
 from api_methods.api_courier import ApiCourier
-from generate_courier_data import *
+from conftest import *
 
 
 @allure.feature('Проверки методов курьера')
@@ -27,10 +27,12 @@ class TestCourier:
             assert response.json().get("ok") is True
 
     @allure.title('Создание курьера с уже существующим логином')
-    def test_create_double_courier(self, full_courier_data, courier_password, courier_name):
+    def test_create_double_courier(self, full_courier_data):
         with allure.step(f'Создаем курьера: {full_courier_data}'):
             self.courier.create_courier(full_courier_data)
         with allure.step('Пытаемся создать курьера с тем же логином, но с другим именем и паролем'):
+            courier_password = generate_random_string(10)
+            courier_name = generate_random_string(10)
             duplicate_login = {
                 "login": full_courier_data["login"],
                 "password": courier_password,
@@ -41,16 +43,20 @@ class TestCourier:
             assert response.status_code == 409
 
     @allure.title('Создание курьера без пароля только с именем и логином')
-    def test_create_courier_without_password(self, courier_login, courier_name):
+    def test_create_courier_without_password(self):
         with allure.step(f'Пытаемся создать курьера без пароля со сгенерированным логином (пароль - пустая строка)'):
+            courier_login = generate_random_string(10)
+            courier_name = generate_random_string(10)
             courier_data = {"login": courier_login, "first_name": courier_name}
             response = self.courier.create_courier(courier_data)
         with allure.step('Проверяем статус-код ответа == 400'):
             assert response.status_code == 400
 
     @allure.title('Создание курьера без логина только с именем и паролем')
-    def test_create_courier_without_login(self, courier_name, courier_password):
+    def test_create_courier_without_login(self):
         with allure.step(f'Пытаемся создать курьера без логина со сгенерированными именем и паролем'):
+            courier_password = generate_random_string(10)
+            courier_name = generate_random_string(10)
             courier_data = {"first_name": courier_name, "password": courier_password}
             response = self.courier.create_courier(courier_data)
         with allure.step('Проверяем статус-код ответа == 400'):
@@ -94,20 +100,22 @@ class TestCourier:
             assert response.status_code == 404
 
     @allure.title('Запрос логина курьера с неправильным паролем')
-    def test_login_courier_with_wrong_password(self, required_courier_data, courier_password):
+    def test_login_courier_with_wrong_password(self, required_courier_data):
         with allure.step(f'Создаем курьера: {required_courier_data}'):
             self.courier.create_courier(required_courier_data)
         with allure.step('Пытаемся залогиниться с новым сгенерированным паролем и со старым логином'):
+            courier_password = generate_random_string(10)
             courier_data = {"login": required_courier_data["login"], "password": courier_password}
             response = self.courier.login_courier(courier_data)
         with allure.step('Проверяем статус-код ответа == 404'):
             assert response.status_code == 404
 
     @allure.title('Запрос логина курьера с неправильным логином')
-    def test_login_courier_with_wrong_password(self, required_courier_data, courier_login):
+    def test_login_courier_with_wrong_password(self, required_courier_data):
         with allure.step(f'Создаем курьера: {required_courier_data}'):
             self.courier.create_courier(required_courier_data)
         with allure.step('Пытаемся залогиниться с новым сгенерированным логином и со старым паролем'):
+            courier_login = generate_random_string(10)
             courier_data = {"password": required_courier_data["password"], "login": courier_login}
             response = self.courier.login_courier(courier_data)
         with allure.step('Проверяем статус-код ответа == 404'):

@@ -39,8 +39,9 @@ class TestCourier:
                 "first_name": courier_name
             }
             response = self.courier.create_courier(duplicate_login)
-        with allure.step('Проверяем статус-код ответа == 409'):
+        with allure.step('Проверяем статус-код ответа == 409 и текст ошибки'):
             assert response.status_code == 409
+            assert "Этот логин уже используется" in response.json().get("message")
 
     @allure.title('Создание курьера без пароля только с именем и логином')
     def test_create_courier_without_password(self):
@@ -49,8 +50,9 @@ class TestCourier:
             courier_name = generate_random_string(10)
             courier_data = {"login": courier_login, "first_name": courier_name}
             response = self.courier.create_courier(courier_data)
-        with allure.step('Проверяем статус-код ответа == 400'):
+        with allure.step('Проверяем статус-код ответа == 400 и текст ошибки'):
             assert response.status_code == 400
+            assert "Недостаточно данных для создания учетной записи" in response.json().get("message")
 
     @allure.title('Создание курьера без логина только с именем и паролем')
     def test_create_courier_without_login(self):
@@ -59,8 +61,9 @@ class TestCourier:
             courier_name = generate_random_string(10)
             courier_data = {"first_name": courier_name, "password": courier_password}
             response = self.courier.create_courier(courier_data)
-        with allure.step('Проверяем статус-код ответа == 400'):
+        with allure.step('Проверяем статус-код ответа == 400 и текст ошибки'):
             assert response.status_code == 400
+            assert "Недостаточно данных для создания учетной записи" in response.json().get("message")
 
     @allure.title('Проверка логина нового курьера')
     def test_login_courier(self, required_courier_data):
@@ -79,8 +82,9 @@ class TestCourier:
         with allure.step(f'Пытаемся залогиниться без ввода пароля'):
             courier_data = {"login": required_courier_data["login"], "password": ''}
             response = self.courier.login_courier(courier_data)
-        with allure.step('Проверяем статус-код ответа == 400'):
+        with allure.step('Проверяем статус-код ответа == 400 и текст ошибки'):
             assert response.status_code == 400
+            assert "Недостаточно данных для входа" in response.json().get("message")
 
     @allure.title('Запрос логина курьера без логина')
     def test_login_courier_without_login(self, required_courier_data):
@@ -89,15 +93,17 @@ class TestCourier:
         with allure.step(f'Пытаемся залогиниться с паролем без логина'):
             courier_data = {"password": required_courier_data["password"]}
             response = self.courier.login_courier(courier_data)
-        with allure.step('Проверяем статус-код ответа == 400'):
+        with allure.step('Проверяем статус-код ответа == 400 и текст ошибки'):
             assert response.status_code == 400
+            assert "Недостаточно данных для входа" in response.json().get("message")
 
     @allure.title('Запрос логина курьера с несуществующими логином и паролем')
     def test_login_unregistered_courier(self, required_courier_data):
         with allure.step(f'Пытаемся залогиниться несуществующим курьером: {required_courier_data}'):
             response = self.courier.login_courier(required_courier_data)
-        with allure.step('Проверяем статус-код ответа == 404'):
+        with allure.step('Проверяем статус-код ответа == 404 и текст ошибки'):
             assert response.status_code == 404
+            assert "Учетная запись не найдена" in response.json().get("message")
 
     @allure.title('Запрос логина курьера с неправильным паролем')
     def test_login_courier_with_wrong_password(self, required_courier_data):
@@ -107,8 +113,9 @@ class TestCourier:
             courier_password = generate_random_string(10)
             courier_data = {"login": required_courier_data["login"], "password": courier_password}
             response = self.courier.login_courier(courier_data)
-        with allure.step('Проверяем статус-код ответа == 404'):
+        with allure.step('Проверяем статус-код ответа == 404 и текст ошибки'):
             assert response.status_code == 404
+            assert "Учетная запись не найдена" in response.json().get("message")
 
     @allure.title('Запрос логина курьера с неправильным логином')
     def test_login_courier_with_wrong_password(self, required_courier_data):
@@ -118,8 +125,9 @@ class TestCourier:
             courier_login = generate_random_string(10)
             courier_data = {"password": required_courier_data["password"], "login": courier_login}
             response = self.courier.login_courier(courier_data)
-        with allure.step('Проверяем статус-код ответа == 404'):
+        with allure.step('Проверяем статус-код ответа == 404 и текст ошибки'):
             assert response.status_code == 404
+            assert "Учетная запись не найдена" in response.json().get("message")
 
     @allure.title('Создаем и удаляем курьера')
     def test_create_and_delete_courier(self, required_courier_data):
@@ -138,13 +146,20 @@ class TestCourier:
     def test_delete_courier_without_id(self):
         with allure.step('Пытаемся удалить курьера без указания id'):
             delete_response = self.courier.delete_courier(None)
-        with allure.step('Проверяем статус-код ответа == 500 '
-                         '(здесь баг - при отсутствии id должен быть статус-код 400)'):
-            assert delete_response.status_code == 500
+        with allure.step('Проверяем статус-код ответа == 400 и текст ошибки '
+                         '(здесь ожидается баг - сервер возвращает 500 статус-код)'):
+            try:
+                assert delete_response.status_code == 400
+                assert "Недостаточно данных для удаления курьера" in delete_response.json().get("message")
+            except AssertionError as e:
+                allure.dynamic.issue("BUG")
+                allure.attach(str(e), name="Known Bug - 500", attachment_type=allure.attachment_type.TEXT)
+                raise
 
     @allure.title('Запрос на удаление курьера с указанием несуществующего id')
     def test_delete_courier_with_fake_id(self):
         with allure.step('Пытаемся удалить курьера с несуществующим id'):
             delete_response = self.courier.delete_courier(999999999)
-        with allure.step('Проверяем статус-код ответа == 404'):
+        with allure.step('Проверяем статус-код ответа == 404 и текст ошибки'):
             assert delete_response.status_code == 404
+            assert "Курьера с таким id нет" in delete_response.json().get("message")

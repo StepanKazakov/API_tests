@@ -69,12 +69,20 @@ class TestOrder:
     def test_get_order_without_id(self):
         with allure.step('Делаем запрос без указания номера заказа'):
             order_response = self.order.get_order_by_id(None)
-        with allure.step('Проверяем статус-код'):
-            assert order_response.status_code == 400
+        with allure.step('Проверяем статус-код ответа == 400 и текст ошибки '
+                         '(здесь ожидается баг - сервер возвращает 500 статус-код)'):
+            try:
+                assert order_response.status_code == 400
+                assert "Недостаточно данных для поиска" in order_response.json().get("message")
+            except AssertionError as e:
+                allure.dynamic.issue("BUG")
+                allure.attach(str(e), name="Known Bug - 500", attachment_type=allure.attachment_type.TEXT)
+                raise
 
     @allure.title('Запрос заказа с несуществующим номером')
-    def test_get_order_without_id(self):
+    def test_get_order_with_wrong_id(self):
         with allure.step('Делаем запрос с несуществующим номером заказа'):
             order_response = self.order.get_order_by_id(999999999)
-        with allure.step('Проверяем статус-код'):
+        with allure.step('Проверяем статус-код и текст ошибки'):
             assert order_response.status_code == 404
+            assert "Заказ не найден" in order_response.json().get("message")
